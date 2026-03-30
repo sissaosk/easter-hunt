@@ -598,15 +598,65 @@
 
     <script>
         let completedLocations = new Set();
+        let unlockedLocations = new Set([1]); // Location 1 starts unlocked
+        let currentLocation = null;
+
+        // Check URL parameters on page load
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const locationParam = urlParams.get('location');
+            if (locationParam) {
+                const location = parseInt(locationParam);
+                if (location >= 1 && location <= 4) {
+                    currentLocation = location;
+                    // Unlock this location when accessed via QR code
+                    unlockedLocations.add(location);
+                    goToLocation(location);
+                }
+            } else {
+                currentLocation = 0;
+                goToLocation(0);
+            }
+        });
 
         function goToLocation(locationNumber) {
             document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
 
             if (locationNumber === 0) {
                 document.getElementById('intro').classList.add('active');
-            } else {
+                currentLocation = 0;
+            } else if (unlockedLocations.has(locationNumber)) {
+                // Location is unlocked, show the challenge
                 document.getElementById('location' + locationNumber).classList.add('active');
+                currentLocation = locationNumber;
+            } else {
+                // Location is locked, show QR gate
+                showQRGate(locationNumber);
+                currentLocation = locationNumber;
             }
+        }
+
+        function showQRGate(nextLocation) {
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+            const gateScreen = document.createElement('div');
+            gateScreen.className = 'screen active';
+            gateScreen.innerHTML = `
+                <div class="story-text" style="text-align: center;">
+                    <h2 style="color: #667eea; margin-bottom: 20px; font-size: 22px;">Fragment Locked!</h2>
+                    <p style="margin-bottom: 30px; font-size: 16px; font-weight: bold;">
+                        You've unlocked the coordinates to Location ${nextLocation}.
+                    </p>
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107; margin: 20px 0;">
+                        <p style="color: #856404; font-size: 15px; line-height: 1.6;">
+                            Head to <strong>Location ${nextLocation}</strong> and scan the QR code you find there to reveal the next challenge!
+                        </p>
+                    </div>
+                    <p style="margin-top: 30px; color: #666; font-size: 13px;">
+                        (The page will unlock when you scan the QR code)
+                    </p>
+                </div>
+            `;
+            document.querySelector('.content').appendChild(gateScreen);
         }
 
         function handleEnter(event, locationNumber) {
@@ -638,7 +688,8 @@
 
                 setTimeout(() => {
                     if (locationNumber < 4) {
-                        goToLocation(locationNumber + 1);
+                        // Show QR gate instead of going directly to next location
+                        showQRGate(locationNumber + 1);
                     } else {
                         goToReveal();
                     }
