@@ -796,9 +796,21 @@
             const urlParams = new URLSearchParams(window.location.search);
             const locationParam = urlParams.get('location');
             if (locationParam) {
-                currentLocation = locationParam;
-                unlockedLocations.add(locationParam);
-                goToLocation(locationParam);
+                // Handle numbered locations (1, 2, 3, 4) and enlightenment
+                if (locationParam === 'enlightenment') {
+                    unlockedLocations.add('enlightenment');
+                    goToLocation('enlightenment');
+                } else if (!isNaN(locationParam)) {
+                    const locNum = parseInt(locationParam);
+                    if (locNum >= 1 && locNum <= 4) {
+                        unlockedLocations.add('location' + locNum);
+                        goToLocation('location' + locNum);
+                    } else {
+                        goToLocation('intro');
+                    }
+                } else {
+                    goToLocation('intro');
+                }
             } else {
                 currentLocation = 'intro';
                 goToLocation('intro');
